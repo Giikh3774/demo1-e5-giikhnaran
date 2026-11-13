@@ -230,8 +230,8 @@
             font-weight: 400;
             color: #ffffff;
             letter-spacing: -0.03em;
-            margin-right: -0.03em;
-            transform: translateX(-20px);
+            margin-right: 0;
+            transform: none;           /* centered exactly so neither edge is cut off */
             line-height: 0.8;
             margin-top: 0;
             margin-bottom: 0;
@@ -352,9 +352,14 @@
             overflow: hidden;
             vertical-align: bottom;
             line-height: 0.8;
+            /* Enlarge the mask so glyph tops (d) and wide sides (w, m) aren't clipped,
+               then pull layout back with negative margins (incl. the -0.03em tracking). */
+            padding: 0.14em 0.06em;
+            margin: -0.14em -0.09em -0.14em -0.06em;
         }
         .footer-logo-text .letter-inner {
             display: inline-block;
+            letter-spacing: 0;
             opacity: 0;
             transform: translateX(-105%);
             filter: blur(20px);
@@ -417,7 +422,7 @@
 
     <!-- 4. Giant wordmark -->
     <div class="footer-logo-wrap">
-        <h2 class="footer-logo-text">Loopstack</h2>
+        <h2 class="footer-logo-text">newnomads</h2>
     </div>
 
     <!-- 5. Background video -->
@@ -462,6 +467,32 @@
                 wrapper.appendChild(inner);
                 logoText.appendChild(wrapper);
             });
+
+            // Fit the wordmark so it is always fully visible:
+            // as wide as the screen allows (minus 20px side padding),
+            // but never so tall that it runs into the footer block.
+            const logoWrap = document.querySelector('.footer-logo-wrap');
+            const footer = document.querySelector('.footer-container');
+            const fitLogo = () => {
+                const letters = logoText.querySelectorAll('.letter-wrapper');
+                if (!letters.length) return;
+                const currentSize = parseFloat(getComputedStyle(logoText).fontSize);
+                const first = letters[0].getBoundingClientRect();
+                const last = letters[letters.length - 1].getBoundingClientRect();
+                const textWidth = last.right - first.left;
+
+                const availableWidth = logoWrap.clientWidth - 40;
+                const sizeByWidth = currentSize * availableWidth / textWidth;
+
+                const footerBottom = footer ? footer.getBoundingClientRect().bottom : 0;
+                const availableHeight = window.innerHeight - 20 - footerBottom - 24;
+                const sizeByHeight = availableHeight / 0.8;
+
+                logoText.style.fontSize = `${Math.max(0, Math.min(sizeByWidth, sizeByHeight))}px`;
+            };
+            fitLogo();
+            if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitLogo);
+            window.addEventListener('resize', fitLogo);
         }
 
         // Разделение верхнего заголовка на слова для анимации появления снизу вверх из маски с блюром
